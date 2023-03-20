@@ -34,6 +34,7 @@ class App extends Component {
             //this.setState({ status: STATUS.REJECTED });
             this.changeStatus(STATUS.REJECTED);
             this.showAlert();
+            Notify.failure('There are no images by this query');
           }
         });
       } catch (error) {
@@ -41,6 +42,7 @@ class App extends Component {
         // this.setState({ status: STATUS.REJECTED });
         this.changeStatus(STATUS.REJECTED);
         this.showAlert();
+        Notify.failure('There are no images by this query');
       }
     }
   }
@@ -58,7 +60,6 @@ class App extends Component {
             images: [...this.state.images, ...res.data.hits],
           })
         )
-        //.then(this.setState({ status: STATUS.RESOLVED }));
         .then(this.changeStatus(STATUS.RESOLVED));
     } catch (error) {
       console.log(error.message);
