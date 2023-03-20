@@ -1,10 +1,11 @@
 import { Component } from 'react';
 import Searchbar from 'components/Searchbar/Searchbar';
-import ImageGallery from 'components/ImageGallery/ImageGallery';
+import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import LoadMoreBtn from 'components/Button/Button';
-import { loadMore } from 'api/api';
 import { Loader } from 'components/Loader/Loader';
 import { Container } from './App.styled';
+import { getImages } from 'api/api';
+import { Notify } from 'notiflix';
 
 const STATUS = {
   IDLE: 'idle',
@@ -20,36 +21,75 @@ class App extends Component {
     status: STATUS.IDLE,
   };
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.query !== this.state.query) {
+      try {
+        getImages(this.state.query, 1).then(res => {
+          if (res.data.hits.length !== 0) {
+            this.setState({
+              images: [...res.data.hits],
+              status: STATUS.RESOLVED,
+            });
+          } else {
+            //this.setState({ status: STATUS.REJECTED });
+            this.changeStatus(STATUS.REJECTED);
+            this.showAlert();
+          }
+        });
+      } catch (error) {
+        console.log(error.message);
+        // this.setState({ status: STATUS.REJECTED });
+        this.changeStatus(STATUS.REJECTED);
+        this.showAlert();
+      }
+    }
+  }
+
   handleFormSubmit = value => {
     this.setState({ query: value, status: STATUS.PENDING });
   };
 
-  loadMoreImages = images => {
-    this.setState({ images: [...images.data.hits], status: STATUS.PENDING });
+  loadMoreImages = page => {
+    try {
+      this.setState({ status: STATUS.PENDING });
+      getImages(this.state.query, page)
+        .then(res =>
+          this.setState({
+            images: [...this.state.images, ...res.data.hits],
+          })
+        )
+        //.then(this.setState({ status: STATUS.RESOLVED }));
+        .then(this.changeStatus(STATUS.RESOLVED));
+    } catch (error) {
+      console.log(error.message);
+      // this.setState({ status: STATUS.REJECTED });
+      this.changeStatus(STATUS.REJECTED);
+    }
   };
 
   changeStatus = status => {
     this.setState({ status });
   };
 
+  showAlert = () => {
+    if (this.state.status === STATUS.REJECTED) {
+      Notify.failure('There are no images by this query');
+    }
+  };
+
   render() {
+    const { images, status } = this.state;
+
     return (
       <Container>
         <Searchbar onSubmit={this.handleFormSubmit} />
-        <ImageGallery
-          query={this.state.query}
-          newImages={this.state.images}
-          changeStatus={this.changeStatus}
-        />
+        {status === STATUS.RESOLVED && <ImageGallery images={images} />}
 
-        {this.state.status === STATUS.RESOLVED && (
-          <LoadMoreBtn
-            loadMore={() => loadMore(this.state.query)}
-            refreshState={this.loadMoreImages}
-          />
+        {status === STATUS.RESOLVED && (
+          <LoadMoreBtn page={this.loadMoreImages} />
         )}
 
-        {this.state.status === STATUS.PENDING && <Loader />}
+        {status === STATUS.PENDING && <Loader />}
       </Container>
     );
   }

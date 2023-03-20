@@ -3,11 +3,12 @@ import { Button } from './Button.styled';
 
 class LoadMoreBtn extends Component {
   state = {
-    loadedImages: null,
+    page: 2,
   };
 
   handleClick = e => {
-    this.props.loadMore().then(images => this.props.refreshState(images));
+    this.props.page(this.state.page);
+    this.setState({ page: this.state.page + 1 });
   };
 
   render() {
