@@ -17,8 +17,9 @@ const STATUS = {
 class App extends Component {
   state = {
     query: '',
-    images: null,
+    images: [],
     status: STATUS.IDLE,
+    totalHits: 0,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -29,7 +30,10 @@ class App extends Component {
             this.setState({
               images: [...res.data.hits],
               status: STATUS.RESOLVED,
+              totalHits: res.data.totalHits,
             });
+
+            Notify.success(`We found ${res.data.totalHits} images`);
           } else {
             //this.setState({ status: STATUS.REJECTED });
             this.changeStatus(STATUS.REJECTED);
@@ -79,18 +83,22 @@ class App extends Component {
   };
 
   render() {
-    const { images, status } = this.state;
+    const { images, status, totalHits } = this.state;
 
     return (
       <Container>
         <Searchbar onSubmit={this.handleFormSubmit} />
         {status === STATUS.RESOLVED && <ImageGallery images={images} />}
 
-        {status === STATUS.RESOLVED && (
+        {status === STATUS.RESOLVED && totalHits > images.length && (
           <LoadMoreBtn page={this.loadMoreImages} />
         )}
 
         {status === STATUS.PENDING && <Loader />}
+
+        {totalHits === images.length &&
+          totalHits !== 0 &&
+          Notify.info('That is all we have found')}
       </Container>
     );
   }
