@@ -20,24 +20,27 @@ class App extends Component {
     images: [],
     status: STATUS.IDLE,
     totalHits: 0,
+    error: null,
   };
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.query !== this.state.query) {
       try {
         getImages(this.state.query, 1).then(res => {
-          if (res.data.hits.length !== 0) {
+          const { hits, totalHits } = res.data;
+
+          if (hits.length !== 0) {
             this.setState({
-              images: [...res.data.hits],
+              images: [...hits],
               status: STATUS.RESOLVED,
-              totalHits: res.data.totalHits,
+              totalHits: totalHits,
             });
 
-            Notify.success(`We found ${res.data.totalHits} images`);
+            Notify.success(`We found ${totalHits} images`);
           } else {
             //this.setState({ status: STATUS.REJECTED });
             this.changeStatus(STATUS.REJECTED);
-            this.showAlert();
+
             Notify.failure('There are no images by this query');
           }
         });
@@ -45,7 +48,8 @@ class App extends Component {
         console.log(error.message);
         // this.setState({ status: STATUS.REJECTED });
         this.changeStatus(STATUS.REJECTED);
-        this.showAlert();
+        this.setState({ error: error.message });
+
         Notify.failure('There are no images by this query');
       }
     }
@@ -67,19 +71,13 @@ class App extends Component {
         .then(this.changeStatus(STATUS.RESOLVED));
     } catch (error) {
       console.log(error.message);
-      // this.setState({ status: STATUS.REJECTED });
+      this.setState({ error: error.message });
       this.changeStatus(STATUS.REJECTED);
     }
   };
 
   changeStatus = status => {
     this.setState({ status });
-  };
-
-  showAlert = () => {
-    if (this.state.status === STATUS.REJECTED) {
-      Notify.failure('There are no images by this query');
-    }
   };
 
   render() {
