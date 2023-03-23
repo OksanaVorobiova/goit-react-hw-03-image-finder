@@ -64,9 +64,9 @@ class App extends Component {
       this.setState({ status: STATUS.PENDING });
       getImages(this.state.query, page)
         .then(res =>
-          this.setState({
-            images: [...this.state.images, ...res.data.hits],
-          })
+          this.setState(({ images }) => ({
+            images: [...images, ...res.data.hits],
+          }))
         )
         .then(this.changeStatus(STATUS.RESOLVED));
     } catch (error) {
@@ -86,7 +86,9 @@ class App extends Component {
     return (
       <Container>
         <Searchbar onSubmit={this.handleFormSubmit} />
-        {status === STATUS.RESOLVED && <ImageGallery images={images} />}
+        {status === STATUS.RESOLVED && images.length > 0 && (
+          <ImageGallery images={images} />
+        )}
 
         {status === STATUS.RESOLVED && totalHits > images.length && (
           <LoadMoreBtn page={this.loadMoreImages} />
